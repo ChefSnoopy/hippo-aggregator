@@ -3,8 +3,8 @@ name = "HippoAggregator"
 version = "0.0.0"
 
 [dependencies]
-Econia = { git = "https://github.com/Manahip/econia.git", subdir = "src/move/econia", rev = "4085e40bed24f6e9d2daa5cd200a3f595c4c14ad" }
-hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "b54d7012d47e7364b769d46b612413d0adb15f5c" }
+Econia = { git = "https://github.com/econia-labs/econia.git", subdir = "src/move/econia", rev = "be235bbdf914ed369bb543f98a29f6672aedf996" }
+hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "9c83fcade93f424c1ebcbbdadf3b883824a025b4" }
 
 [addresses]
 hippo_aggregator = "a61e1e86e9f596e483283727d2739ba24b919012720648c29380f9cd0a96c11a"

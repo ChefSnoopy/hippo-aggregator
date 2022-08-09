@@ -1,4 +1,4 @@
-module hippo_aggregator::aggregatorv3 {
+module hippo_aggregator::aggregatorv0 {
     use aptos_framework::coin;
     use aptos_framework::coins;
     use aptos_framework::account;
