@@ -14,6 +14,7 @@ module hippo_aggregator::aggregatorv0 {
 
     const DEX_HIPPO: u8 = 1;
     const DEX_ECONIA: u8 = 2;
+    const DEX_PONTEM: u8 = 3;
 
     const HIPPO_CONSTANT_PRODUCT:u8 = 1;
     const HIPPO_STABLE_CURVE:u8 = 2;
@@ -106,6 +107,10 @@ module hippo_aggregator::aggregatorv0 {
             else {
                 abort E_UNKNOWN_POOL_TYPE
             }
+        }
+        else if (dex_type == DEX_PONTEM) {
+            use pontem::router;
+            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(@pontem, x_in, 0))
         }
         else {
             abort E_UNKNOWN_DEX

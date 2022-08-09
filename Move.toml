@@ -5,6 +5,7 @@ version = "0.0.0"
 [dependencies]
 Econia = { git = "https://github.com/econia-labs/econia.git", subdir = "src/move/econia", rev = "be235bbdf914ed369bb543f98a29f6672aedf996" }
 hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "9c83fcade93f424c1ebcbbdadf3b883824a025b4" }
+LiquidSwapInterface = { git = "https://github.com/hippospace/hippo-aggregator.git", subdir = "interface/pontem", rev= "a2e123b894ad1ff50f33dc8dd79aedd5a6fd522f"}
 
 [addresses]
 hippo_aggregator = "a61e1e86e9f596e483283727d2739ba24b919012720648c29380f9cd0a96c11a"
