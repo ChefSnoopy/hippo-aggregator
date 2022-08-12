@@ -1,4 +1,4 @@
-module hippo_aggregator::aggregatorv0 {
+module hippo_aggregator::aggregatorv6 {
     use aptos_framework::coin;
     use aptos_framework::coins;
     use aptos_framework::account;
@@ -110,14 +110,14 @@ module hippo_aggregator::aggregatorv0 {
         }
         else if (dex_type == DEX_PONTEM) {
             use pontem::router;
-            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(@pontem, x_in, 0))
+            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(@hippo_aggregator, x_in, 0))
         }
         else {
             abort E_UNKNOWN_DEX
         }
     }
 
-    fun check_and_deposit<X>(sender: &signer, coin_opt: Option<coin::Coin<X>>) {
+    fun check_and_deposit_opt<X>(sender: &signer, coin_opt: Option<coin::Coin<X>>) {
         if (option::is_some(&coin_opt)) {
             let coin = option::extract(&mut coin_opt);
             let sender_addr = signer::address_of(sender);
@@ -127,6 +127,14 @@ module hippo_aggregator::aggregatorv0 {
             coin::deposit(sender_addr, coin);
         };
         option::destroy_none(coin_opt)
+    }
+
+    fun check_and_deposit<X>(sender: &signer, coin: coin::Coin<X>) {
+        let sender_addr = signer::address_of(sender);
+        if (!coin::is_account_registered<X>(sender_addr)) {
+            coins::register_internal<X>(sender);
+        };
+        coin::deposit(sender_addr, coin);
     }
 
     #[cmd]
@@ -141,8 +149,8 @@ module hippo_aggregator::aggregatorv0 {
         let coin_in = coin::withdraw<X>(sender, x_in);
         let (coin_remain_opt, coin_out) = get_intermediate_output<X, Y, E>(first_dex_type, first_pool_type, first_is_x_to_y, coin_in);
         assert!(coin::value(&coin_out) >= y_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
-        coin::deposit(signer::address_of(sender), coin_out);
-        check_and_deposit(sender, coin_remain_opt);
+        check_and_deposit_opt(sender, coin_remain_opt);
+        check_and_deposit(sender, coin_out);
     }
 
     #[cmd]
@@ -163,9 +171,9 @@ module hippo_aggregator::aggregatorv0 {
         let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, coin_x);
         let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
         assert!(coin::value(&coin_z) >= z_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
-        coin::deposit(signer::address_of(sender), coin_z);
-        check_and_deposit(sender, coin_x_remain);
-        check_and_deposit(sender, coin_y_remain);
+        check_and_deposit_opt(sender, coin_x_remain);
+        check_and_deposit_opt(sender, coin_y_remain);
+        check_and_deposit(sender, coin_z);
     }
 
     #[cmd]
@@ -190,9 +198,9 @@ module hippo_aggregator::aggregatorv0 {
         let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
         let (coin_z_remain, coin_m) = get_intermediate_output<Z, M, E3>(third_dex_type, third_pool_type, third_is_x_to_y, coin_z);
         assert!(coin::value(&coin_m) >= m_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
-        coin::deposit(signer::address_of(sender), coin_m);
-        check_and_deposit(sender, coin_x_remain);
-        check_and_deposit(sender, coin_y_remain);
-        check_and_deposit(sender, coin_z_remain);
+        check_and_deposit_opt(sender, coin_x_remain);
+        check_and_deposit_opt(sender, coin_y_remain);
+        check_and_deposit_opt(sender, coin_z_remain);
+        check_and_deposit(sender, coin_m);
     }
 }
