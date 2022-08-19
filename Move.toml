@@ -3,10 +3,10 @@ name = "HippoAggregator"
 version = "0.0.0"
 
 [dependencies]
-Econia = { git = "https://github.com/Manahip/econia.git", subdir = "src/move/econia", rev = "4015c95e67fed2a9a1cfdff35a6871a43a911fbc" }
-hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "c6775bbe9938834cf0ecfe30da8b2bde9a5c9972" }
+Econia = { git = "https://github.com/Manahip/econia.git", subdir = "src/move/econia", rev = "6338efc5b93862fa141c2470d53418e9064d122d" }
+hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "99182f047dc0582f7568cb7142d207a09be4b2a6" }
 LiquidSwapInterface = { git = "https://github.com/hippospace/hippo-aggregator.git", subdir = "interface/pontem", rev= "8c914b08e5a17f8a00427e9924d8c608a5814df4"}
-CoinList = { git = "https://github.com/hippospace/aptos-coin-list.git", subdir = "", rev = "d472da765d56b4b6ff0179b48c3c7a9c554919cf" }
+CoinList = { git = "https://github.com/hippospace/aptos-coin-list.git", subdir = "", rev = "209f9e7016effc7e293794e22d0a7ad860b57bbd" }
 
 [addresses]
 hippo_aggregator = "a61e1e86e9f596e483283727d2739ba24b919012720648c29380f9cd0a96c11a"
