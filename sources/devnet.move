@@ -1,6 +1,7 @@
 module hippo_aggregator::devnetv6{
-    use hippo_swap::mock_coin::{WBTC, WUSDC, faucet_mint_to};
+    use coin_list::devnet_coins::{DevnetBTC as BTC, DevnetUSDC as USDC, mint_to_wallet};
     use std::signer::address_of;
+    use econia::registry::E0;
 
     const BTC_AMOUNT: u64 = 100000000 * 1000;
     const USDC_AMOUNT: u64 = 100000000 * 1000 * 10000;
@@ -10,9 +11,9 @@ module hippo_aggregator::devnetv6{
     #[cmd(desc=b"Create BTC-USDC pool on pontem and add liquidity")]
     public entry fun mock_deploy_pontem(admin: signer) {
         use pontem::scripts;
-        faucet_mint_to<WBTC>(&admin, BTC_AMOUNT);
-        faucet_mint_to<WUSDC>(&admin, USDC_AMOUNT);
-        scripts::register_pool_and_add_liquidity<WBTC, WUSDC, PontemLP<WBTC, WUSDC>>(
+        mint_to_wallet<BTC>(&admin, BTC_AMOUNT);
+        mint_to_wallet<USDC>(&admin, USDC_AMOUNT);
+        scripts::register_pool_and_add_liquidity<BTC, USDC, PontemLP<BTC, USDC>>(
             admin,
             2, // uncorrelated,
             BTC_AMOUNT,
@@ -26,14 +27,13 @@ module hippo_aggregator::devnetv6{
     public entry fun mock_deploy_econia(admin: signer) {
         use econia::market;
         use econia::user;
-        use econia::registry::E0;
-        market::register_market<WBTC, WUSDC, E0>(&admin);
-        user::register_market_account<WBTC, WUSDC, E0>(&admin, 0);
-        faucet_mint_to<WBTC>(&admin, BTC_AMOUNT);
-        faucet_mint_to<WUSDC>(&admin, USDC_AMOUNT);
-        user::deposit_collateral_coinstore<WBTC, WUSDC, E0>(&admin, 0, true, BTC_AMOUNT);
-        user::deposit_collateral_coinstore<WBTC, WUSDC, E0>(&admin, 0, false, USDC_AMOUNT);
-        market::place_limit_order_user<WBTC, WUSDC, E0>(&admin, address_of(&admin), true, BTC_AMOUNT, 10001);
-        market::place_limit_order_user<WBTC, WUSDC, E0>(&admin, address_of(&admin), false, BTC_AMOUNT, 10000);
+        market::register_market<BTC, USDC, E0>(&admin);
+        user::register_market_account<BTC, USDC, E0>(&admin, 0);
+        mint_to_wallet<BTC>(&admin, BTC_AMOUNT);
+        mint_to_wallet<USDC>(&admin, USDC_AMOUNT);
+        user::deposit_collateral_coinstore<BTC, USDC, E0>(&admin, 0, true, BTC_AMOUNT);
+        user::deposit_collateral_coinstore<BTC, USDC, E0>(&admin, 0, false, USDC_AMOUNT);
+        market::place_limit_order_user<BTC, USDC, E0>(&admin, address_of(&admin), true, BTC_AMOUNT, 10001);
+        market::place_limit_order_user<BTC, USDC, E0>(&admin, address_of(&admin), false, BTC_AMOUNT, 10000);
     }
 }
