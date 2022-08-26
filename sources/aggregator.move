@@ -1,6 +1,5 @@
 module hippo_aggregator::aggregatorv6 {
     use aptos_framework::coin;
-    use aptos_framework::coins;
     use aptos_framework::account;
     use std::signer;
     use std::option;
@@ -122,7 +121,7 @@ module hippo_aggregator::aggregatorv6 {
             let coin = option::extract(&mut coin_opt);
             let sender_addr = signer::address_of(sender);
             if (!coin::is_account_registered<X>(sender_addr)) {
-                coins::register_internal<X>(sender);
+                coin::register<X>(sender);
             };
             coin::deposit(sender_addr, coin);
         };
@@ -132,7 +131,7 @@ module hippo_aggregator::aggregatorv6 {
     fun check_and_deposit<X>(sender: &signer, coin: coin::Coin<X>) {
         let sender_addr = signer::address_of(sender);
         if (!coin::is_account_registered<X>(sender_addr)) {
-            coins::register_internal<X>(sender);
+            coin::register<X>(sender);
         };
         coin::deposit(sender_addr, coin);
     }

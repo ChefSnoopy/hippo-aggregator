@@ -3,7 +3,7 @@ name = "LiquidSwapInterface"
 version = "0.0.0"
 
 [dependencies]
-AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "a026097e1873d6ce2a264c4e162e910bbf5788f3" }
+AptosFramework = { git = "https://github.com/aptos-labs/aptos-core.git", subdir = "aptos-move/framework/aptos-framework/", rev = "e1c6a5713301ed72bf3a846ab9536d002ac801d6" }
 
 [addresses]
 pontem = "0x43417434fd869edee76cca2a4d2301e528a1551b1d719b75c350c3c97d15b8b9"
