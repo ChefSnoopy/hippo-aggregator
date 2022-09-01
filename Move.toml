@@ -4,7 +4,7 @@ version = "0.0.0"
 
 [dependencies]
 Econia = { git = "https://github.com/Manahip/econia.git", subdir = "src/move/econia", rev = "6b7b915d611b3610d7a7343e6f40d924c074b58c" }
-hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "3191d396d2e295b29bfb6e57133e09f33fc8e428" }
+hippo-swap = { git = "https://github.com/hippospace/hippo-swap.git", rev = "18ab26edfa92205fb9682c044d689e01c7dce6a3" }
 LiquidSwapInterface = { git = "https://github.com/hippospace/hippo-aggregator.git", subdir = "interface/pontem", rev= "0b7b4964c66aa3d46be6147422af8be84b98679b"}
 CoinList = { git = "https://github.com/hippospace/aptos-coin-list.git", subdir = "", rev = "58bbf9e3b82dc1a11530b794fabf191fbdc5fca8" }
 

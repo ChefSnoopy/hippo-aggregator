@@ -136,6 +136,15 @@ module hippo_aggregator::aggregatorv6 {
         coin::deposit(sender_addr, coin);
     }
 
+    public fun one_step_direct<X, Y, E>(
+        dex_type: u8,
+        pool_type: u8,
+        is_x_to_y: bool,
+        x_in: coin::Coin<X>
+    ):(Option<coin::Coin<X>>, coin::Coin<Y>){
+        get_intermediate_output<X, Y, E>(dex_type, pool_type, is_x_to_y, x_in)
+    }
+
     #[cmd]
     public entry fun one_step_route<X, Y, E>(
         sender: &signer,
@@ -146,10 +155,26 @@ module hippo_aggregator::aggregatorv6 {
         y_min_out: u64,
     ) {
         let coin_in = coin::withdraw<X>(sender, x_in);
-        let (coin_remain_opt, coin_out) = get_intermediate_output<X, Y, E>(first_dex_type, first_pool_type, first_is_x_to_y, coin_in);
+        let (coin_remain_opt, coin_out) = one_step_direct<X, Y, E>(first_dex_type, first_pool_type, first_is_x_to_y, coin_in);
         assert!(coin::value(&coin_out) >= y_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
         check_and_deposit_opt(sender, coin_remain_opt);
         check_and_deposit(sender, coin_out);
+    }
+
+    public fun two_step_direct<
+        X, Y, Z, E1, E2,
+    >(
+      first_dex_type: u8,
+      first_pool_type: u8,
+      first_is_x_to_y: bool, // first trade uses normal order
+      second_dex_type: u8,
+      second_pool_type: u8,
+      second_is_x_to_y: bool, // second trade uses normal order
+      x_in: coin::Coin<X>
+    ):(Option<coin::Coin<X>>, Option<coin::Coin<Y>>, coin::Coin<Z>){
+        let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, x_in);
+        let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
+        (coin_x_remain, coin_y_remain, coin_z)
     }
 
     #[cmd]
@@ -167,12 +192,43 @@ module hippo_aggregator::aggregatorv6 {
         z_min_out: u64,
     ) {
         let coin_x = coin::withdraw<X>(sender, x_in);
-        let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, coin_x);
-        let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
+        let (
+            coin_x_remain,
+            coin_y_remain,
+            coin_z
+        ) = two_step_direct<X, Y, Z, E1, E2>(
+            first_dex_type,
+            first_pool_type,
+            first_is_x_to_y,
+            second_dex_type,
+            second_pool_type,
+            second_is_x_to_y,
+            coin_x
+        );
         assert!(coin::value(&coin_z) >= z_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
         check_and_deposit_opt(sender, coin_x_remain);
         check_and_deposit_opt(sender, coin_y_remain);
         check_and_deposit(sender, coin_z);
+    }
+
+    public fun three_step_direct<
+        X, Y, Z, M, E1, E2, E3
+    >(
+        first_dex_type: u8,
+        first_pool_type: u8,
+        first_is_x_to_y: bool, // first trade uses normal order
+        second_dex_type: u8,
+        second_pool_type: u8,
+        second_is_x_to_y: bool, // second trade uses normal order
+        third_dex_type: u8,
+        third_pool_type: u8,
+        third_is_x_to_y: bool, // second trade uses normal order
+        x_in: coin::Coin<X>
+    ):(Option<coin::Coin<X>>, Option<coin::Coin<Y>>, Option<coin::Coin<Z>>, coin::Coin<M>){
+        let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, x_in);
+        let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
+        let (coin_z_remain, coin_m) = get_intermediate_output<Z, M, E3>(third_dex_type, third_pool_type, third_is_x_to_y, coin_z);
+        (coin_x_remain, coin_y_remain, coin_z_remain, coin_m)
     }
 
     #[cmd]
@@ -193,9 +249,23 @@ module hippo_aggregator::aggregatorv6 {
         m_min_out: u64,
     ) {
         let coin_x = coin::withdraw<X>(sender, x_in);
-        let (coin_x_remain, coin_y) = get_intermediate_output<X, Y, E1>(first_dex_type, first_pool_type, first_is_x_to_y, coin_x);
-        let (coin_y_remain, coin_z) = get_intermediate_output<Y, Z, E2>(second_dex_type, second_pool_type, second_is_x_to_y, coin_y);
-        let (coin_z_remain, coin_m) = get_intermediate_output<Z, M, E3>(third_dex_type, third_pool_type, third_is_x_to_y, coin_z);
+        let (
+            coin_x_remain,
+            coin_y_remain,
+            coin_z_remain ,
+            coin_m
+        ) = three_step_direct<X, Y, Z, M, E1, E2, E3>(
+            first_dex_type,
+            first_pool_type,
+            first_is_x_to_y,
+            second_dex_type,
+            second_pool_type,
+            second_is_x_to_y,
+            third_dex_type,
+            third_pool_type,
+            third_is_x_to_y,
+            coin_x
+        );
         assert!(coin::value(&coin_m) >= m_min_out, E_OUTPUT_LESS_THAN_MINIMUM);
         check_and_deposit_opt(sender, coin_x_remain);
         check_and_deposit_opt(sender, coin_y_remain);
