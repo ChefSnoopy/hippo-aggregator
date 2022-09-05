@@ -1,5 +1,5 @@
 #[test_only]
-module hippo_aggregator::two_step {
+module hippo_aggregator::three_step {
     use std::signer;
     use aptos_std::debug::print;
     use aptos_framework::coin;
@@ -13,7 +13,7 @@ module hippo_aggregator::two_step {
         DevnetBTC as BTC,
         DevnetUSDC as USDC
     };
-    use hippo_aggregator::aggregatorv6::two_step_route;
+    use hippo_aggregator::aggregatorv6::{three_step_route};
     use hippo_aggregator::econia::init_market_test;
 
     #[test_only]
@@ -46,7 +46,7 @@ module hippo_aggregator::two_step {
         user_3 = @0x5,
         swap_user = @0x6
     )]
-    fun test_two_step(
+    fun test_three_step(
         aggregator: &signer,
         hippo_swap: &signer,
         econia: &signer,
@@ -65,7 +65,7 @@ module hippo_aggregator::two_step {
         let quote_coins_spent:u64 = 238;
         devnet_coins::mint_to_wallet<USDC>(swap_user, quote_coins_spent);
         print(&coin::balance<USDC>(signer::address_of(swap_user)));
-        two_step_route<USDC, BTC, USDC, E1, E1>(
+        three_step_route<USDC, BTC, USDC, BTC, E1, E1, E1>(
             swap_user,
             DEX_ECONIA,
             ECONIA_V1,
@@ -73,9 +73,13 @@ module hippo_aggregator::two_step {
             DEX_HIPPO,
             HIPPO_CONSTANT_PRODUCT,
             true,
+            DEX_HIPPO,
+            HIPPO_CONSTANT_PRODUCT,
+            false,
             quote_coins_spent,
             0
         );
         print(&coin::balance<USDC>(signer::address_of(swap_user)));
+        print(&coin::balance<BTC>(signer::address_of(swap_user)));
     }
 }
