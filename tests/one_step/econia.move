@@ -14,6 +14,7 @@ module hippo_aggregator::econia {
     use econia::market::{init_econia_capability_store, register_market, place_limit_order_custodian};
     use econia::order_id;
     use hippo_aggregator::aggregatorv6::one_step_route;
+    use aptos_framework::account;
 
     #[test_only]
     const DEX_HIPPO: u8 = 1;
@@ -228,6 +229,7 @@ module hippo_aggregator::econia {
         swap_user: &signer
     ) {
         genesis::setup();
+        account::create_account_for_test(address_of(aggregator));
         devnet_coins::deploy(coin_list_admin);
 
         init_market_test<BTC, USDC, E1>(ASK, econia_admin, aggregator, user_0, user_1, user_2, user_3);
