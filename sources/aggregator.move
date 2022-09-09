@@ -1,4 +1,4 @@
-module hippo_aggregator::aggregatorv6 {
+module hippo_aggregator::aggregator {
     use aptos_framework::coin;
     use aptos_framework::account;
     use std::signer;
@@ -83,13 +83,14 @@ module hippo_aggregator::aggregatorv6 {
         );
     }
 
-    fun get_intermediate_output_internal<X, Y, E>(
+    public fun get_intermediate_output<X, Y, E>(
         dex_type: u8,
         pool_type: u8,
         is_x_to_y: bool,
         x_in: coin::Coin<X>
-    ): (Option<coin::Coin<X>>, coin::Coin<Y>){
-        if (dex_type == DEX_HIPPO) {
+    ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
+        let coin_in_value = coin::value(&x_in);
+        let (x_out_opt, y_out) = if (dex_type == DEX_HIPPO) {
             if (pool_type == HIPPO_CONSTANT_PRODUCT) {
                 if (is_x_to_y) {
                     let (x_out, y_out) = cp_swap::swap_x_to_exact_y_direct<X, Y>(x_in);
@@ -158,20 +159,10 @@ module hippo_aggregator::aggregatorv6 {
         }
         else {
             abort E_UNKNOWN_DEX
-        }
-    }
-    public fun get_intermediate_output<X, Y, E>(
-        dex_type: u8,
-        pool_type: u8,
-        is_x_to_y: bool,
-        x_in: coin::Coin<X>
-    ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
-        let coin_in_value = coin::value(&x_in);
-        let (x_out_op, y_out) =
-            get_intermediate_output_internal<X, Y, E>(dex_type, pool_type, is_x_to_y, x_in);
+        };
 
-        let coin_in_value = if (is_some(&x_out_op)) {
-            coin_in_value - coin::value(borrow(&x_out_op))
+        let coin_in_value = if (is_some(&x_out_opt)) {
+            coin_in_value - coin::value(borrow(&x_out_opt))
         } else {
             coin_in_value
         };
@@ -181,7 +172,7 @@ module hippo_aggregator::aggregatorv6 {
             coin_in_value,
             coin::value(&y_out)
         );
-        (x_out_op, y_out)
+        (x_out_opt, y_out)
     }
 
     fun check_and_deposit_opt<X>(sender: &signer, coin_opt: Option<coin::Coin<X>>) {

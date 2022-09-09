@@ -1,4 +1,4 @@
-module hippo_aggregator::devnetv6{
+module hippo_aggregator::devnet {
     use coin_list::devnet_coins::{DevnetBTC as BTC, DevnetUSDC as USDC, mint_to_wallet};
     use std::signer::address_of;
     use econia::registry::E0;
@@ -14,7 +14,7 @@ module hippo_aggregator::devnetv6{
         mint_to_wallet<BTC>(&admin, BTC_AMOUNT);
         mint_to_wallet<USDC>(&admin, USDC_AMOUNT);
         scripts::register_pool_and_add_liquidity<BTC, USDC, PontemLP<BTC, USDC>>(
-            admin,
+            &admin,
             2, // uncorrelated,
             BTC_AMOUNT,
             0,
