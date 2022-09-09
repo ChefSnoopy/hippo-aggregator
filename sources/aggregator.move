@@ -3,7 +3,7 @@ module hippo_aggregator::aggregatorv6 {
     use aptos_framework::account;
     use std::signer;
     use std::option;
-    use std::option::Option;
+    use std::option::{Option, is_some, borrow};
     use hippo_swap::cp_swap;
     use hippo_swap::stable_curve_swap;
     use hippo_swap::piece_swap;
@@ -61,6 +61,7 @@ module hippo_aggregator::aggregatorv6 {
             swap_step_events: account::new_event_handle<SwapStepEvent>(admin)
         });
     }
+
     fun emit_swap_step_event<Input, Output>(
         dex_type:u8,
         pool_type:u8,
@@ -81,35 +82,23 @@ module hippo_aggregator::aggregatorv6 {
             },
         );
     }
-    public fun get_intermediate_output<X, Y, E>(
+
+    fun get_intermediate_output_internal<X, Y, E>(
         dex_type: u8,
         pool_type: u8,
         is_x_to_y: bool,
         x_in: coin::Coin<X>
-    ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
-        let coin_in_value = coin::value(&x_in);
+    ): (Option<coin::Coin<X>>, coin::Coin<Y>){
         if (dex_type == DEX_HIPPO) {
             if (pool_type == HIPPO_CONSTANT_PRODUCT) {
                 if (is_x_to_y) {
                     let (x_out, y_out) = cp_swap::swap_x_to_exact_y_direct<X, Y>(x_in);
                     coin::destroy_zero(x_out);
-                    emit_swap_step_event<X, Y>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
                 else {
                     let (y_out, x_out) = cp_swap::swap_y_to_exact_x_direct<Y, X>(x_in);
                     coin::destroy_zero(x_out);
-                    emit_swap_step_event<Y, X>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
             }
@@ -118,46 +107,22 @@ module hippo_aggregator::aggregatorv6 {
                     let (zero, zero2, y_out) = stable_curve_swap::swap_x_to_exact_y_direct<X, Y>(x_in);
                     coin::destroy_zero(zero);
                     coin::destroy_zero(zero2);
-                    emit_swap_step_event<X, Y>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
                 else {
                     let (zero, y_out, zero2) = stable_curve_swap::swap_y_to_exact_x_direct<Y, X>(x_in);
                     coin::destroy_zero(zero);
                     coin::destroy_zero(zero2);
-                    emit_swap_step_event<Y, X>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
             }
             else if (pool_type == HIPPO_PIECEWISE) {
                 if (is_x_to_y) {
                     let y_out = piece_swap::swap_x_to_y_direct<X, Y>(x_in);
-                    emit_swap_step_event<X, Y>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
                 else {
                     let y_out = piece_swap::swap_y_to_x_direct<Y, X>(x_in);
-                    emit_swap_step_event<Y, X>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
                     (option::none(), y_out)
                 }
             }
@@ -171,21 +136,9 @@ module hippo_aggregator::aggregatorv6 {
                 let y_out = coin::zero<Y>();
                 if (is_x_to_y) {
                     market::swap<X, Y, E>(false, @hippo_aggregator, &mut x_in, &mut y_out);
-                    emit_swap_step_event<X, Y>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value-coin::value(&x_in),
-                        coin::value(&y_out)
-                    );
                 }
                 else {
                     market::swap<Y, X, E>(true, @hippo_aggregator, &mut y_out, &mut x_in);
-                    emit_swap_step_event<Y, X>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value-coin::value(&x_in),
-                        coin::value(&y_out)
-                    );
                 };
                 if (coin::value(&x_in) == 0) {
                     coin::destroy_zero(x_in);
@@ -201,18 +154,34 @@ module hippo_aggregator::aggregatorv6 {
         }
         else if (dex_type == DEX_PONTEM) {
             use pontem::router;
-            let y_out = router::swap_exact_coin_for_coin<X, Y, E>(@hippo_aggregator, x_in, 0);
-            emit_swap_step_event<X, Y>(
-                dex_type,
-                pool_type,
-                coin_in_value,
-                coin::value(&y_out)
-            );
-            (option::none(), y_out)
+            (option::none(), router::swap_exact_coin_for_coin<X, Y, E>(@hippo_aggregator, x_in, 0))
         }
         else {
             abort E_UNKNOWN_DEX
         }
+    }
+    public fun get_intermediate_output<X, Y, E>(
+        dex_type: u8,
+        pool_type: u8,
+        is_x_to_y: bool,
+        x_in: coin::Coin<X>
+    ): (Option<coin::Coin<X>>, coin::Coin<Y>) acquires EventStore {
+        let coin_in_value = coin::value(&x_in);
+        let (x_out_op, y_out) =
+            get_intermediate_output_internal<X, Y, E>(dex_type, pool_type, is_x_to_y, x_in);
+
+        let coin_in_value = if (is_some(&x_out_op)) {
+            coin_in_value - coin::value(borrow(&x_out_op))
+        } else {
+            coin_in_value
+        };
+        emit_swap_step_event<X, Y>(
+            dex_type,
+            pool_type,
+            coin_in_value,
+            coin::value(&y_out)
+        );
+        (x_out_op, y_out)
     }
 
     fun check_and_deposit_opt<X>(sender: &signer, coin_opt: Option<coin::Coin<X>>) {
