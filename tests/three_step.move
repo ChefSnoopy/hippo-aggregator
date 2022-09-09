@@ -13,7 +13,7 @@ module hippo_aggregator::three_step {
         DevnetBTC as BTC,
         DevnetUSDC as USDC
     };
-    use hippo_aggregator::aggregatorv6::{three_step_route};
+    use hippo_aggregator::aggregatorv6::{three_step_route, initialize};
     use hippo_aggregator::econia::init_market_test;
 
     #[test_only]
@@ -58,7 +58,11 @@ module hippo_aggregator::three_step {
         swap_user: &signer
     ){
         genesis::setup();
-        aptos_account::create_account(signer::address_of(hippo_swap));
+        aptos_account::create_account(signer::address_of(aggregator));
+        initialize(aggregator);
+        if (signer::address_of(hippo_swap) != signer::address_of(aggregator)) {
+            aptos_account::create_account(signer::address_of(hippo_swap));
+        };
         devnet_coins::deploy(coin_list);
         cp_scripts::mock_deploy_script(hippo_swap);
         init_market_test<BTC, USDC, E1>(ASK, econia, aggregator, user_0, user_1, user_2, user_3);
