@@ -104,7 +104,7 @@ module hippo_aggregator::aggregatorv6 {
                 else {
                     let (y_out, x_out) = cp_swap::swap_y_to_exact_x_direct<Y, X>(x_in);
                     coin::destroy_zero(x_out);
-                    emit_swap_step_event<X, Y>(
+                    emit_swap_step_event<Y, X>(
                         dex_type,
                         pool_type,
                         coin_in_value,
@@ -130,7 +130,7 @@ module hippo_aggregator::aggregatorv6 {
                     let (zero, y_out, zero2) = stable_curve_swap::swap_y_to_exact_x_direct<Y, X>(x_in);
                     coin::destroy_zero(zero);
                     coin::destroy_zero(zero2);
-                    emit_swap_step_event<X, Y>(
+                    emit_swap_step_event<Y, X>(
                         dex_type,
                         pool_type,
                         coin_in_value,
@@ -152,7 +152,7 @@ module hippo_aggregator::aggregatorv6 {
                 }
                 else {
                     let y_out = piece_swap::swap_y_to_x_direct<Y, X>(x_in);
-                    emit_swap_step_event<X, Y>(
+                    emit_swap_step_event<Y, X>(
                         dex_type,
                         pool_type,
                         coin_in_value,
@@ -171,27 +171,27 @@ module hippo_aggregator::aggregatorv6 {
                 let y_out = coin::zero<Y>();
                 if (is_x_to_y) {
                     market::swap<X, Y, E>(false, @hippo_aggregator, &mut x_in, &mut y_out);
-                }
-                else {
-                    market::swap<Y, X, E>(true, @hippo_aggregator, &mut y_out, &mut x_in);
-                };
-                if (coin::value(&x_in) == 0) {
-                    coin::destroy_zero(x_in);
-                    emit_swap_step_event<X, Y>(
-                        dex_type,
-                        pool_type,
-                        coin_in_value,
-                        coin::value(&y_out)
-                    );
-                    (option::none(), y_out)
-                }
-                else {
                     emit_swap_step_event<X, Y>(
                         dex_type,
                         pool_type,
                         coin_in_value-coin::value(&x_in),
                         coin::value(&y_out)
                     );
+                }
+                else {
+                    market::swap<Y, X, E>(true, @hippo_aggregator, &mut y_out, &mut x_in);
+                    emit_swap_step_event<Y, X>(
+                        dex_type,
+                        pool_type,
+                        coin_in_value-coin::value(&x_in),
+                        coin::value(&y_out)
+                    );
+                };
+                if (coin::value(&x_in) == 0) {
+                    coin::destroy_zero(x_in);
+                    (option::none(), y_out)
+                }
+                else {
                     (option::some(x_in), y_out)
                 }
             }
